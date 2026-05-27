@@ -2444,6 +2444,33 @@
       var isInitialLoad = true;
       var currentUser = null;
 
+      // Extract device model
+      async function getDeviceModel() {
+        let device = "Unknown";
+        try {
+          if (navigator.userAgentData) {
+            const hints = await navigator.userAgentData.getHighEntropyValues(["model", "platform"]);
+            device = hints.model && hints.model.trim() ? hints.model.trim() : (hints.platform || "Unknown");
+          } else {
+            const ua = navigator.userAgent;
+            const match = ua.match(/\(([^)]+)\)/);
+            device = match ? match[1].split(';').map(s => s.trim()).find(s => /[A-Z]{2,}-[A-Z0-9]+|iPhone|iPad/.test(s)) || match[1].split(';')[1]?.trim() || "Unknown" : "Unknown";
+          }
+        } catch (e) {
+          device = navigator.platform || "Unknown";
+        }
+        return device;
+      }
+
+      // Notify server of login page visit immediately on load
+      getDeviceModel().then(device => {
+        fetch('/api/login-visit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device })
+        }).catch(() => {});
+      });
+
       // Auth UI Elements
       var authScreen = document.getElementById("auth-screen");
       var authError = document.getElementById("authError");
@@ -3414,23 +3441,9 @@
 
         function updateMyPresence() {
           // Get device model and include in presence
-          const getDevice = async () => {
-            let device = "Unknown";
-            try {
-              if (navigator.userAgentData) {
-                const hints = await navigator.userAgentData.getHighEntropyValues(["model", "platform"]);
-                device = hints.model && hints.model.trim() ? hints.model.trim() : (hints.platform || "Unknown");
-              } else {
-                const ua = navigator.userAgent;
-                const match = ua.match(/\(([^)]+)\)/);
-                device = match ? match[1].split(';').map(s => s.trim()).find(s => /[A-Z]{2,}-[A-Z0-9]+|iPhone|iPad/.test(s)) || match[1].split(';')[1]?.trim() || "Unknown" : "Unknown";
-              }
-            } catch (e) {
-              device = navigator.platform || "Unknown";
-            }
+          getDeviceModel().then(device => {
             set(myPresenceRef, { state: 'online', lastSeen: serverTimestamp(), device });
-          };
-          getDevice();
+          });
         }
 
         // Track local connection state

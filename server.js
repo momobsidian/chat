@@ -235,6 +235,33 @@ const MIME = {
 
 // ── Static file server ───────────────────────────────────────────────────────
 const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.url === '/api/login-visit') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const device = data.device || 'Unknown';
+        const time = new Date().toLocaleTimeString();
+        
+        log.event(`VISIT   | Login Page | Device: ${device} | Time: ${time}`);
+        sendDiscord(`🚨 **Login Page Visited**\nDevice: ${device}\nTime: ${time}`);
+        sendPushover('Login Page Visited', `Device: ${device} | Time: ${time}`);
+        if (typeof sendTelegram === 'function') {
+          sendTelegram(`🚨 <b>Login Page Visited</b>\nDevice: ${device}\nTime: ${time}`);
+        }
+        if (typeof sendFCM === 'function') {
+          sendFCM('Login Page Visited', `Device: ${device} | Time: ${time}`);
+        }
+      } catch (e) {
+        log.error('Failed to parse login-visit', e.message);
+      }
+      res.writeHead(200);
+      res.end('OK');
+    });
+    return;
+  }
+
   let filePath = req.url === '/' ? '/index.html' : req.url.split('?')[0];
   const fullPath = path.join(__dirname, filePath);
 
