@@ -4190,7 +4190,8 @@
             messagesEl.appendChild(createBubbleRow(msg, false, isNewGroup));
             
             // Insert divider after the chronologically oldest unread message (so it appears visually ABOVE it in column-reverse)
-            if (msg.id === oldestUnreadMsgId) {
+            if (msg.id === oldestUnreadMsgId && !window.hasShownUnreadDivider) {
+              window.hasShownUnreadDivider = true;
               const divider = document.createElement('div');
               divider.className = 'unread-divider';
               divider.textContent = 'Unread Messages';
@@ -4399,6 +4400,7 @@
           // Only update if we are advancing the read receipt
           if (!window.highestReadId || highestVisibleId > window.highestReadId) {
              window.highestReadId = highestVisibleId;
+             window.myLastReadId = highestVisibleId; // Sync local last read id
              set(myReadReceiptRef, window.highestReadId);
           }
 
