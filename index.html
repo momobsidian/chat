@@ -2585,24 +2585,20 @@
         const userSettingsRef = ref(db, 'settings/shared');
         const myPinRef = ref(db, 'settings/' + currentUser + '/pin');
 
-        // ======= ONE-SHOT PREFETCH: settings + ALL messages + draft + readReceipts =======
-        const otherReadReceiptRef = ref(db, 'readReceipts/' + otherUser);
-        const [settingsSnap, pinSnap, msgSnap, draftSnap, readReceiptSnap] = await Promise.all([
+        var prefetchOtherUser = currentUser === "Sayem" ? "Shajeda" : "Sayem";
+
+        // ======= ONE-SHOT PREFETCH: settings + ALL messages + draft + read receipts =======
+        const [settingsSnap, pinSnap, msgSnap, draftSnap, readSnap] = await Promise.all([
           get(userSettingsRef),
           get(myPinRef),
           get(messagesRef),
           get(ref(db, 'drafts/' + currentUser)),
-          get(otherReadReceiptRef)
+          get(ref(db, 'readReceipts/' + prefetchOtherUser))
         ]);
 
         if (settingsSnap.val()) { userSettings = { ...userSettings, ...settingsSnap.val() }; }
         if (pinSnap.val()) { userSettings.pin = pinSnap.val(); }
-        
-        // Initialize otherUserLastReadId immediately before rendering messages
-        window.otherUserLastReadId = null;
-        if (readReceiptSnap.exists()) {
-          window.otherUserLastReadId = readReceiptSnap.val().lastReadId;
-        }
+        window.otherUserLastReadId = readSnap.val() || null;
 
         // Load saved draft into input
         if (draftSnap.val()) {
