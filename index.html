@@ -932,6 +932,17 @@
       transform: translateY(0);
       pointer-events: auto;
     }
+    .scroll-bottom-btn.has-new::after {
+      content: "";
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      border: 2px solid var(--bg);
+    }
 
     .input-container {
       border-radius: 0;
@@ -4130,6 +4141,20 @@
         // We override the outer scope's render/append functionality 
         // essentially hooking the listener to the freshly injected DOM
         window.activeRenderMessages = renderMessages;
+
+        // Robust check for if we are near the bottom
+        function getIsNearBottom() {
+          const firstChild = messagesEl.firstElementChild;
+          if (!firstChild) return true;
+          
+          const containerRect = messagesEl.getBoundingClientRect();
+          const childRect = firstChild.getBoundingClientRect();
+          
+          // In column-reverse, scrolling UP means the first child moves DOWN relative to viewport
+          const distance = childRect.bottom - containerRect.bottom;
+          return distance < 150;
+        }
+
         window.activeAppendMessage = function (msg) {
           if (!currentUser) return;
 
@@ -4150,6 +4175,18 @@
 
           // L — Last: insert new message (triggers reflow)
           messagesEl.prepend(row);
+          
+          // Add unread badge if it's someone else's message and we are far from bottom
+          if (msg.sender !== currentUser) {
+            const isNearBottom = getIsNearBottom();
+            if (!isNearBottom) {
+              const btn = document.getElementById('scrollBottomBtn');
+              if (btn) {
+                btn.classList.add('has-new');
+                btn.classList.add('show');
+              }
+            }
+          }
 
           // I + P — Invert and Play: for each old message, animate from old Y → new Y
           existing.forEach(el => {
@@ -4307,11 +4344,12 @@
 
         // Scroll listener for hiding/showing scroll-to-bottom button
         messagesEl.addEventListener('scroll', () => {
-          const isNearBottom = Math.abs(messagesEl.scrollTop) < 150;
+          const isNearBottom = getIsNearBottom();
           const btn = document.getElementById('scrollBottomBtn');
           if (btn) {
             if (isNearBottom) {
               btn.classList.remove('show');
+              btn.classList.remove('has-new'); // Clear unread badge
             } else {
               btn.classList.add('show');
             }
