@@ -932,16 +932,33 @@
       transform: translateY(0);
       pointer-events: auto;
     }
-    .scroll-bottom-btn.has-new::after {
-      content: "";
+    .new-message-popup {
       position: absolute;
-      top: -2px;
-      right: -2px;
-      width: 8px;
-      height: 8px;
-      background: #ef4444;
-      border-radius: 50%;
-      border: 2px solid var(--bg);
+      bottom: calc(100% + 40px);
+      right: 15px;
+      margin-bottom: 10px;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      color: #ccc;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      z-index: 100;
+      clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .new-message-popup.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
     }
 
     .input-container {
@@ -2237,6 +2254,9 @@
 
 
     <div class="input-area">
+      <div class="new-message-popup" id="newMessagePopup">
+        <i class="fa-solid fa-arrow-down"></i> New Message
+      </div>
       <div class="scroll-bottom-btn" id="scrollBottomBtn">
         <i class="fa-solid fa-arrow-down"></i>
       </div>
@@ -4176,15 +4196,12 @@
           // L — Last: insert new message (triggers reflow)
           messagesEl.prepend(row);
           
-          // Add unread badge if it's someone else's message and we are far from bottom
+          // Add new message popup if it's someone else's message and we are far from bottom
           if (msg.sender !== currentUser) {
             const isNearBottom = getIsNearBottom();
             if (!isNearBottom) {
-              const btn = document.getElementById('scrollBottomBtn');
-              if (btn) {
-                btn.classList.add('has-new');
-                btn.classList.add('show');
-              }
+              const popup = document.getElementById('newMessagePopup');
+              if (popup) popup.classList.add('show');
             }
           }
 
@@ -4342,17 +4359,16 @@
           chatInput.style.height = Math.max(newHeight, 28) + "px";
         }
 
-        // Scroll listener for hiding/showing scroll-to-bottom button
+        // Scroll listener for hiding/showing popup and scroll-to-bottom button
         messagesEl.addEventListener('scroll', () => {
           const isNearBottom = getIsNearBottom();
           const btn = document.getElementById('scrollBottomBtn');
-          if (btn) {
-            if (isNearBottom) {
-              btn.classList.remove('show');
-              btn.classList.remove('has-new'); // Clear unread badge
-            } else {
-              btn.classList.add('show');
-            }
+          const popup = document.getElementById('newMessagePopup');
+          if (isNearBottom) {
+            if (btn) btn.classList.remove('show');
+            if (popup) popup.classList.remove('show');
+          } else {
+            if (btn) btn.classList.add('show');
           }
         }, { passive: true });
 
@@ -4360,6 +4376,14 @@
         if (scrollBtn) {
           scrollBtn.addEventListener('click', () => {
             messagesEl.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
+        
+        const newMsgPopup = document.getElementById('newMessagePopup');
+        if (newMsgPopup) {
+          newMsgPopup.addEventListener('click', () => {
+            messagesEl.scrollTo({ top: 0, behavior: 'smooth' });
+            newMsgPopup.classList.remove('show');
           });
         }
 
