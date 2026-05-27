@@ -3988,9 +3988,6 @@
           delete updates.text;
           delete updates.imageUrl;
 
-          // Remove 'id' field - it should only be the Firebase key, not in the document value
-          delete updates.id;
-
           await set(msgRef, updates);
         }
 
@@ -4563,9 +4560,6 @@
               // If removing text but has image/sticker, keep the message without text
               delete updates.text;
             }
-
-            // Remove 'id' field - it should only be the Firebase key, not in the document value
-            delete updates.id;
 
             await set(msgRef, updates);
 
