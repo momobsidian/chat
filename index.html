@@ -902,6 +902,36 @@
       position: relative;
     }
 
+    .new-message-popup {
+      position: absolute;
+      bottom: 100%;
+      right: 15px;
+      margin-bottom: 10px;
+      background: #111;
+      border: 1px solid #2a2a2a;
+      color: #ccc;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      z-index: 100;
+      clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .new-message-popup.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
     .input-container {
       border-radius: 0;
       background: var(--bg);
@@ -2195,6 +2225,9 @@
 
 
     <div class="input-area">
+      <div class="new-message-popup" id="newMessagePopup">
+        <i class="fa-solid fa-arrow-down"></i> New Message
+      </div>
       <div class="input-container">
         
         <div class="reply-preview-bar hidden" id="replyPreviewBar">
@@ -4116,6 +4149,13 @@
 
           // L — Last: insert new message (triggers reflow)
           messagesEl.prepend(row);
+            
+          // Show popup if it's someone else's message and we are far from bottom
+          const isNearBottom = Math.abs(messagesEl.scrollTop) < 150;
+          if (!isNearBottom && msg.sender !== currentUser) {
+            const popup = document.getElementById('newMessagePopup');
+            if (popup) popup.classList.add('show');
+          }
 
           // I + P — Invert and Play: for each old message, animate from old Y → new Y
           existing.forEach(el => {
@@ -4269,6 +4309,23 @@
           chatInput.style.height = "auto";
           var newHeight = Math.min(chatInput.scrollHeight, 120);
           chatInput.style.height = Math.max(newHeight, 28) + "px";
+        }
+
+        // Scroll listener for hiding popup
+        messagesEl.addEventListener('scroll', () => {
+          const isNearBottom = Math.abs(messagesEl.scrollTop) < 150;
+          if (isNearBottom) {
+            const popup = document.getElementById('newMessagePopup');
+            if (popup) popup.classList.remove('show');
+          }
+        }, { passive: true });
+
+        const popup = document.getElementById('newMessagePopup');
+        if (popup) {
+          popup.addEventListener('click', () => {
+            messagesEl.scrollTo({ top: 0, behavior: 'smooth' });
+            popup.classList.remove('show');
+          });
         }
 
         var typingTimeout = null;
