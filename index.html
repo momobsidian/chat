@@ -932,6 +932,28 @@
       transform: translateY(0);
       pointer-events: auto;
     }
+    .scroll-bottom-btn .badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: #111;
+      color: #fff;
+      border: 1px solid #444;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 1px 4px;
+      min-width: 14px;
+      height: 14px;
+      box-sizing: border-box;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      clip-path: polygon(2px 0, 100% 0, 100% calc(100% - 2px), calc(100% - 2px) 100%, 0 100%, 0 2px);
+    }
+    .scroll-bottom-btn.has-new .badge {
+      display: flex;
+    }
     .new-message-popup {
       position: absolute;
       bottom: calc(100% + 40px);
@@ -2259,6 +2281,7 @@
       </div>
       <div class="scroll-bottom-btn" id="scrollBottomBtn">
         <i class="fa-solid fa-arrow-down"></i>
+        <div class="badge" id="scrollBottomBadge">1</div>
       </div>
       <div class="input-container">
         
@@ -4200,8 +4223,15 @@
           if (msg.sender !== currentUser) {
             const isNearBottom = getIsNearBottom();
             if (!isNearBottom) {
+              window.unreadMessageCount = (window.unreadMessageCount || 0) + 1;
               const popup = document.getElementById('newMessagePopup');
               if (popup) popup.classList.add('show');
+              const btn = document.getElementById('scrollBottomBtn');
+              const badge = document.getElementById('scrollBottomBadge');
+              if (btn && badge) {
+                btn.classList.add('has-new');
+                badge.textContent = window.unreadMessageCount;
+              }
             }
           }
 
@@ -4365,7 +4395,11 @@
           const btn = document.getElementById('scrollBottomBtn');
           const popup = document.getElementById('newMessagePopup');
           if (isNearBottom) {
-            if (btn) btn.classList.remove('show');
+            window.unreadMessageCount = 0;
+            if (btn) {
+              btn.classList.remove('show');
+              btn.classList.remove('has-new');
+            }
             if (popup) popup.classList.remove('show');
           } else {
             if (btn) btn.classList.add('show');
