@@ -4723,9 +4723,12 @@
             if (window.activeAppendMessage) window.activeAppendMessage(newMsg);
           } else {
             // Possible edit/delete — full re-sync
-            allMessages = [];
-            liveKeys.forEach(key => allMessages.push({ id: key, ...data[key] }));
-            if (window.activeRenderMessages) window.activeRenderMessages();
+            const newData = [];
+            liveKeys.forEach(key => newData.push({ id: key, ...data[key] }));
+            if (JSON.stringify(newData) !== JSON.stringify(allMessages)) {
+              allMessages = newData;
+              if (window.activeRenderMessages) window.activeRenderMessages();
+            }
           }
         });
 
