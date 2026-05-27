@@ -836,6 +836,18 @@
       opacity: 0.7;
     }
 
+    /* ── SEEN SYSTEM ── */
+    /* Sent bubble text is gray until the message is seen */
+    .bubble-row.sent[data-status="sent"] .bubble-text {
+      color: #9ca3af;
+      transition: color 0.4s ease;
+    }
+    /* Seen bubble text snaps to full white via the same transition */
+    .bubble-row.sent[data-status="seen"] .bubble-text {
+      color: #ffffff;
+      transition: color 0.4s ease;
+    }
+
     .deleted-message {
       font-size: 14px;
       color: var(--text-secondary);
@@ -3455,6 +3467,13 @@
           // Store ID for swipe-to-reply lookups
           row.dataset.id = msg.id;
 
+          /* ── SEEN SYSTEM ── */
+          // Tag every sent message row with its id and initial status
+          if (isSent) {
+            row.dataset.msgId = msg.id;
+            row.dataset.status = 'sent';
+          }
+
           var bubble = document.createElement("div");
           bubble.className = "bubble";
 
@@ -3605,6 +3624,10 @@
           }
 
           row.appendChild(bubble);
+
+          /* ── SEEN SYSTEM ── */
+          // No extra element needed — text color is driven by CSS [data-status] selectors
+
           return row;
         }
 
@@ -4124,6 +4147,86 @@
             row.classList.remove('new-msg');
           }, { once: true });
         };
+
+        /* ══════════════════════════════════════════════════════════════
+           ── SEEN SYSTEM ──
+           Sent bubble text starts gray (#9ca3af) via CSS [data-status="sent"].
+           Flips to white (#ffffff) via CSS [data-status="seen"] when the
+           partner's received message scrolls into the chat viewport.
+           No extra DOM elements — pure CSS attribute selector + transition.
+        ══════════════════════════════════════════════════════════════ */
+
+        // Flip data-status="sent" → "seen" for all sent rows older than receivedMsgId
+        function markSeenUpTo(receivedMsgId) {
+          messagesEl.querySelectorAll('.bubble-row.sent[data-msg-id][data-status="sent"]').forEach(row => {
+            // Firebase push keys are lexicographically ordered — compare directly
+            if (row.dataset.msgId <= receivedMsgId) {
+              row.dataset.status = 'seen'; // CSS transition fires automatically
+            }
+          });
+        }
+
+        // IntersectionObserver watching received messages inside the chat scroll container
+        const seenObserver = new IntersectionObserver((entries) => {
+          // Collect ids of all received messages that are currently intersecting
+          const visibleIds = entries
+            .filter(e => e.isIntersecting)
+            .map(e => e.target.dataset.id)
+            .filter(Boolean);
+
+          if (visibleIds.length === 0) return;
+
+          // Use the highest id (most recent received message visible) for batch update
+          const highestId = visibleIds.reduce((a, b) => (a > b ? a : b));
+          markSeenUpTo(highestId);
+
+          // Unobserve each firing entry — fire-once per received message
+          entries.forEach(e => {
+            if (e.isIntersecting) seenObserver.unobserve(e.target);
+          });
+        }, {
+          root: messagesEl,  // the chat scroll container — NOT window
+          rootMargin: '0px',
+          threshold: 0.6
+        });
+
+        // Begin observing a single received message row
+        function observeReceivedRow(row) {
+          if (!row || row.classList.contains('sent')) return;
+          seenObserver.observe(row);
+        }
+
+        // Bulk-observe all received rows currently in the DOM (called after renders)
+        // History rows are observed but NOT pre-marked — user must scroll to trigger
+        function observeAllExistingReceivedRows() {
+          messagesEl.querySelectorAll('.bubble-row.received[data-id]').forEach(row => {
+            seenObserver.observe(row);
+          });
+        }
+
+        // Wire up existing history rows after initial render
+        observeAllExistingReceivedRows();
+
+        // ── Patch activeAppendMessage to wire the observer for live new messages ──
+        const _origAppend = window.activeAppendMessage;
+        window.activeAppendMessage = function(msg) {
+          // Delegate to original FLIP append
+          _origAppend(msg);
+
+          // After the DOM update settles, register the new row with the observer
+          requestAnimationFrame(() => {
+            const row = messagesEl.querySelector(`.bubble-row[data-id="${msg.id}"]`);
+            if (row && msg.sender !== currentUser) observeReceivedRow(row);
+          });
+        };
+
+        // ── Patch activeRenderMessages to re-observe after edit/delete re-renders ──
+        const _origRender = window.activeRenderMessages;
+        window.activeRenderMessages = function() {
+          _origRender();
+          requestAnimationFrame(() => observeAllExistingReceivedRows());
+        };
+        /* ── END SEEN SYSTEM ── */
 
         function autoResize() {
           chatInput.style.height = "auto";

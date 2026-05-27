@@ -4,5 +4,4 @@ node_modules/
 *.log
 obsidian-firebase.json
 android-firebase.json
-clean-env.js
 .DS_Store
