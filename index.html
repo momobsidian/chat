@@ -932,33 +932,23 @@
       transform: translateY(0);
       pointer-events: auto;
     }
-    .scroll-bottom-btn .badge {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      background: #111;
-      color: #fff;
-      border: 1px solid #444;
-      font-size: 9px;
-      font-weight: bold;
-      padding: 1px 4px;
-      min-width: 14px;
-      height: 14px;
-      box-sizing: border-box;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      clip-path: polygon(2px 0, 100% 0, 100% calc(100% - 2px), calc(100% - 2px) 100%, 0 100%, 0 2px);
-    }
-    .scroll-bottom-btn.has-new .badge {
-      display: flex;
-    }
-    .new-message-popup {
+    .new-message-popup-wrapper {
       position: absolute;
       bottom: calc(100% + 40px);
       right: 15px;
       margin-bottom: 10px;
+      z-index: 100;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+    }
+    .new-message-popup-wrapper.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .new-message-popup {
       background: #111;
       border: 1px solid #2a2a2a;
       color: #ccc;
@@ -967,21 +957,31 @@
       font-weight: 500;
       letter-spacing: 0.04em;
       cursor: pointer;
-      z-index: 100;
       clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      opacity: 0;
-      transform: translateY(10px);
-      pointer-events: none;
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    .new-message-popup.show {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: auto;
+    .new-message-popup-wrapper .badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #ef4444; /* Standard red notification badge */
+      color: #fff;
+      border: 1px solid #111;
+      font-size: 9px;
+      font-weight: bold;
+      padding: 1px 4px;
+      min-width: 16px;
+      height: 16px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      clip-path: polygon(2px 0, 100% 0, 100% calc(100% - 2px), calc(100% - 2px) 100%, 0 100%, 0 2px);
     }
+
 
     .input-container {
       border-radius: 0;
@@ -2276,12 +2276,14 @@
 
 
     <div class="input-area">
-      <div class="new-message-popup" id="newMessagePopup">
-        <i class="fa-solid fa-arrow-down"></i> New Message
+      <div class="new-message-popup-wrapper" id="newMessagePopupWrapper">
+        <div class="new-message-popup" id="newMessagePopup">
+          <i class="fa-solid fa-arrow-down"></i> New Message
+        </div>
+        <div class="badge" id="newMessageBadge">1</div>
       </div>
       <div class="scroll-bottom-btn" id="scrollBottomBtn">
         <i class="fa-solid fa-arrow-down"></i>
-        <div class="badge" id="scrollBottomBadge">1</div>
       </div>
       <div class="input-container">
         
@@ -4224,12 +4226,10 @@
             const isNearBottom = getIsNearBottom();
             if (!isNearBottom) {
               window.unreadMessageCount = (window.unreadMessageCount || 0) + 1;
-              const popup = document.getElementById('newMessagePopup');
-              if (popup) popup.classList.add('show');
-              const btn = document.getElementById('scrollBottomBtn');
-              const badge = document.getElementById('scrollBottomBadge');
-              if (btn && badge) {
-                btn.classList.add('has-new');
+              const popupWrapper = document.getElementById('newMessagePopupWrapper');
+              const badge = document.getElementById('newMessageBadge');
+              if (popupWrapper && badge) {
+                popupWrapper.classList.add('show');
                 badge.textContent = window.unreadMessageCount;
               }
             }
@@ -4393,14 +4393,11 @@
         messagesEl.addEventListener('scroll', () => {
           const isNearBottom = getIsNearBottom();
           const btn = document.getElementById('scrollBottomBtn');
-          const popup = document.getElementById('newMessagePopup');
+          const popupWrapper = document.getElementById('newMessagePopupWrapper');
           if (isNearBottom) {
             window.unreadMessageCount = 0;
-            if (btn) {
-              btn.classList.remove('show');
-              btn.classList.remove('has-new');
-            }
-            if (popup) popup.classList.remove('show');
+            if (btn) btn.classList.remove('show');
+            if (popupWrapper) popupWrapper.classList.remove('show');
           } else {
             if (btn) btn.classList.add('show');
           }
@@ -4417,7 +4414,8 @@
         if (newMsgPopup) {
           newMsgPopup.addEventListener('click', () => {
             messagesEl.scrollTo({ top: 0, behavior: 'smooth' });
-            newMsgPopup.classList.remove('show');
+            const popupWrapper = document.getElementById('newMessagePopupWrapper');
+            if (popupWrapper) popupWrapper.classList.remove('show');
           });
         }
 
