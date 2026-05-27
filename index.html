@@ -2585,16 +2585,24 @@
         const userSettingsRef = ref(db, 'settings/shared');
         const myPinRef = ref(db, 'settings/' + currentUser + '/pin');
 
-        // ======= ONE-SHOT PREFETCH: settings + ALL messages + draft =======
-        const [settingsSnap, pinSnap, msgSnap, draftSnap] = await Promise.all([
+        // ======= ONE-SHOT PREFETCH: settings + ALL messages + draft + readReceipts =======
+        const otherReadReceiptRef = ref(db, 'readReceipts/' + otherUser);
+        const [settingsSnap, pinSnap, msgSnap, draftSnap, readReceiptSnap] = await Promise.all([
           get(userSettingsRef),
           get(myPinRef),
           get(messagesRef),
-          get(ref(db, 'drafts/' + currentUser))
+          get(ref(db, 'drafts/' + currentUser)),
+          get(otherReadReceiptRef)
         ]);
 
         if (settingsSnap.val()) { userSettings = { ...userSettings, ...settingsSnap.val() }; }
         if (pinSnap.val()) { userSettings.pin = pinSnap.val(); }
+        
+        // Initialize otherUserLastReadId immediately before rendering messages
+        window.otherUserLastReadId = null;
+        if (readReceiptSnap.exists()) {
+          window.otherUserLastReadId = readReceiptSnap.val().lastReadId;
+        }
 
         // Load saved draft into input
         if (draftSnap.val()) {
@@ -4278,7 +4286,6 @@
            partner's received message scrolls into the chat viewport.
         ══════════════════════════════════════════════════════════════ */
 
-        window.otherUserLastReadId = null;
         window.highestReadId = null;
 
         const otherReadReceiptRef = ref(db, 'readReceipts/' + otherUser);
