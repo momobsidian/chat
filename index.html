@@ -4420,10 +4420,15 @@
         }
 
         // Bulk-observe all received rows currently in the DOM (called after renders)
-        // History rows are observed but NOT pre-marked — user must scroll to trigger
+        // Skip rows already covered by highestReadId to prevent re-render from
+        // falsely advancing the read receipt for messages partner hasn't consciously seen.
         function observeAllExistingReceivedRows() {
           messagesEl.querySelectorAll('.bubble-row.received[data-id]').forEach(row => {
-            seenObserver.observe(row);
+            const rowId = row.dataset.id;
+            // Only observe rows not yet accounted for in the read receipt
+            if (!window.highestReadId || rowId > window.highestReadId) {
+              seenObserver.observe(row);
+            }
           });
         }
 
