@@ -4282,19 +4282,24 @@
           var row = createBubbleRow(msg, true, isNewGroup);
 
           // ═══════════════════════════════════════════════════════════
-          // FLIP TECHNIQUE — Same as demo
+          // FLIP TECHNIQUE — only visible rows for mobile performance
           // ═══════════════════════════════════════════════════════════
-          
-          // F — First: snapshot current positions of all existing messages
-          const existing = Array.from(messagesEl.querySelectorAll('.bubble-row'));
+
+          // F — First: read container rect ONCE, then filter to visible rows only
+          const containerRect = messagesEl.getBoundingClientRect();
+          const allRows = Array.from(messagesEl.querySelectorAll('.bubble-row'));
           const firstY = new Map();
-          existing.forEach(el => {
-            firstY.set(el, el.getBoundingClientRect().top);
+          // Batch all reads before any DOM writes
+          allRows.forEach(el => {
+            const r = el.getBoundingClientRect();
+            if (r.bottom >= containerRect.top && r.top <= containerRect.bottom) {
+              firstY.set(el, r.top);
+            }
           });
 
           // L — Last: insert new message (triggers reflow)
           messagesEl.prepend(row);
-          
+
           // Add new message popup if it's someone else's message and we are far from bottom
           if (msg.sender !== currentUser) {
             const isNearBottom = getIsNearBottom();
@@ -4309,24 +4314,18 @@
             }
           }
 
-          // I + P — Invert and Play: for each old message, animate from old Y → new Y
-          existing.forEach(el => {
-            const oldTop = firstY.get(el);
+          // I + P — Invert and Play: batch all reads first, then write transforms
+          const flipData = [];
+          firstY.forEach((oldTop, el) => {
             const newTop = el.getBoundingClientRect().top;
-            const dy = oldTop - newTop; // positive = element moved up
-
-            if (Math.abs(dy) < 1) return; // didn't move, skip
-
-            // Cancel any in-progress FLIP animation on this element
+            const dy = oldTop - newTop;
+            if (Math.abs(dy) >= 1) flipData.push({ el, dy });
+          });
+          // Now apply transforms in a single pass (no interleaved read/write)
+          flipData.forEach(({ el, dy }) => {
             el.classList.remove('flip-moving');
-            // Force a style recalc so removing the class takes effect
-            el.offsetHeight; // eslint-disable-line no-unused-expressions
-
-            // Set the invert offset as a CSS variable
             el.style.setProperty('--flip-dy', `${dy}px`);
             el.classList.add('flip-moving');
-
-            // Clean up after animation completes
             el.addEventListener('animationend', () => {
               el.classList.remove('flip-moving');
               el.style.removeProperty('--flip-dy');
