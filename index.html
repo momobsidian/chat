@@ -3591,7 +3591,7 @@
           }
         }, 1000); // Update every 1s for live timer feel
 
-        function createBubbleRow(msg, animate, isNewGroup) {
+        function createBubbleRow(msg, animate, isNewGroup, preservedStatus) {
           var row = document.createElement("div");
           var isSent = msg.sender === currentUser;
           var cls = "bubble-row " + (isSent ? "sent" : "received");
@@ -3605,7 +3605,10 @@
           // Tag every sent message row with its id and initial status
           if (isSent) {
             row.dataset.msgId = msg.id;
-            if (window.otherUserLastReadId && msg.id <= window.otherUserLastReadId) {
+            // Use preserved status if available (during re-renders), otherwise calculate
+            if (preservedStatus) {
+              row.dataset.status = preservedStatus;
+            } else if (window.otherUserLastReadId && msg.id <= window.otherUserLastReadId) {
               row.dataset.status = 'seen';
             } else {
               row.dataset.status = 'sent';
@@ -4171,6 +4174,12 @@
           // Save scroll position
           const prevScrollTop = messagesEl.scrollTop;
 
+          // Save existing status of sent messages before re-render
+          const existingStatuses = {};
+          messagesEl.querySelectorAll('.bubble-row.sent[data-msg-id]').forEach(row => {
+            existingStatuses[row.dataset.msgId] = row.dataset.status;
+          });
+
           messagesEl.style.visibility = 'hidden';
 
           let oldestUnreadMsgId = null;
@@ -4187,7 +4196,7 @@
           [...allMessages].reverse().forEach(function (msg, i, arr) {
             var nextInDOM = arr[i + 1]; // This is the chronologically previous message
             var isNewGroup = !nextInDOM || nextInDOM.sender !== msg.sender;
-            messagesEl.appendChild(createBubbleRow(msg, false, isNewGroup));
+            messagesEl.appendChild(createBubbleRow(msg, false, isNewGroup, existingStatuses[msg.id]));
             
             // Insert divider after the chronologically oldest unread message (so it appears visually ABOVE it in column-reverse)
             if (msg.id === oldestUnreadMsgId && !window.hasShownUnreadDivider) {
