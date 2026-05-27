@@ -4103,50 +4103,43 @@
           var isNewGroup = !prev || prev.sender !== msg.sender;
           var row = createBubbleRow(msg, true, isNewGroup);
 
-          const isNearBottom = Math.abs(messagesEl.scrollTop) < 150;
-
           // ═══════════════════════════════════════════════════════════
-          // FLIP TECHNIQUE — Only if near bottom
+          // FLIP TECHNIQUE — Same as demo
           // ═══════════════════════════════════════════════════════════
           
-          if (isNearBottom) {
-            // F — First: snapshot current positions of all existing messages
-            const existing = Array.from(messagesEl.querySelectorAll('.bubble-row'));
-            const firstY = new Map();
-            existing.forEach(el => {
-              firstY.set(el, el.getBoundingClientRect().top);
-            });
+          // F — First: snapshot current positions of all existing messages
+          const existing = Array.from(messagesEl.querySelectorAll('.bubble-row'));
+          const firstY = new Map();
+          existing.forEach(el => {
+            firstY.set(el, el.getBoundingClientRect().top);
+          });
 
-            // L — Last: insert new message (triggers reflow)
-            messagesEl.prepend(row);
+          // L — Last: insert new message (triggers reflow)
+          messagesEl.prepend(row);
 
-            // I + P — Invert and Play: for each old message, animate from old Y → new Y
-            existing.forEach(el => {
-              const oldTop = firstY.get(el);
-              const newTop = el.getBoundingClientRect().top;
-              const dy = oldTop - newTop; // positive = element moved up
+          // I + P — Invert and Play: for each old message, animate from old Y → new Y
+          existing.forEach(el => {
+            const oldTop = firstY.get(el);
+            const newTop = el.getBoundingClientRect().top;
+            const dy = oldTop - newTop; // positive = element moved up
 
-              if (Math.abs(dy) < 1) return; // didn't move, skip
+            if (Math.abs(dy) < 1) return; // didn't move, skip
 
-              // Cancel any in-progress FLIP animation on this element
+            // Cancel any in-progress FLIP animation on this element
+            el.classList.remove('flip-moving');
+            // Force a style recalc so removing the class takes effect
+            el.offsetHeight; // eslint-disable-line no-unused-expressions
+
+            // Set the invert offset as a CSS variable
+            el.style.setProperty('--flip-dy', `${dy}px`);
+            el.classList.add('flip-moving');
+
+            // Clean up after animation completes
+            el.addEventListener('animationend', () => {
               el.classList.remove('flip-moving');
-              // Force a style recalc so removing the class takes effect
-              el.offsetHeight; // eslint-disable-line no-unused-expressions
-
-              // Set the invert offset as a CSS variable
-              el.style.setProperty('--flip-dy', `${dy}px`);
-              el.classList.add('flip-moving');
-
-              // Clean up after animation completes
-              el.addEventListener('animationend', () => {
-                el.classList.remove('flip-moving');
-                el.style.removeProperty('--flip-dy');
-              }, { once: true });
-            });
-          } else {
-            // If scrolled far up, just prepend. Native scroll anchoring will prevent jumps.
-            messagesEl.prepend(row);
-          }
+              el.style.removeProperty('--flip-dy');
+            }, { once: true });
+          });
 
           // Animate the new bubble entering
           setTimeout(() => {
