@@ -4454,9 +4454,9 @@
           _origRender();
           requestAnimationFrame(() => {
             observeAllExistingReceivedRows();
-            if (window.otherUserLastReadId) {
-              markMySentMessagesAsSeen(window.otherUserLastReadId);
-            }
+            // NOTE: do NOT call markMySentMessagesAsSeen here —
+            // createBubbleRow already sets correct data-status at render time.
+            // Calling it here after edit re-renders causes false "seen" status.
           });
         };
         /* ── END SEEN SYSTEM ── */
