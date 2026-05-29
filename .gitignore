@@ -5,3 +5,4 @@ node_modules/
 obsidian-firebase.json
 android-firebase.json
 .DS_Store
+.vscode
