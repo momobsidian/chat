@@ -410,9 +410,10 @@
     /* Swipe-to-Reply CSS */
     .bubble-row {
       position: relative;
-
       touch-action: pan-y;
       /* disable horizontal pan so we can swipe */
+      overflow: visible;
+      /* Allow absolute positioned children to overflow */
     }
 
     .reply-icon-indicator {
@@ -866,11 +867,12 @@
       padding: 4px 0;
       display: none;
       flex-direction: column;
-      z-index: 1000;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
       animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       min-width: 120px;
       clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+      z-index: 10;
+      /* Local z-index within bubble-row context */
     }
 
     .message-actions.show {
@@ -3911,35 +3913,58 @@
           document.body.appendChild(actions);
           activeMessageActions = actions;
 
-          // Position the actions menu with smart edge detection
+          // Position the actions menu relative to bubble-row
+          const bubbleRow = bubbleEl.closest('.bubble-row');
           const rect = bubbleEl.getBoundingClientRect();
-          const isSentMsg = bubbleEl.closest('.bubble-row').classList.contains('sent');
+          const rowRect = bubbleRow.getBoundingClientRect();
+          const isSentMsg = bubbleRow.classList.contains('sent');
+
+          // Remove from body and append to bubble-row
+          actions.remove();
+          bubbleRow.appendChild(actions);
 
           // Get menu dimensions after adding to DOM
           const menuRect = actions.getBoundingClientRect();
           const menuWidth = menuRect.width;
           const menuHeight = menuRect.height;
 
-          // Calculate vertical position
-          let top = rect.bottom + 5 + window.scrollY;
+          // Get viewport dimensions
+          const viewportWidth = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+          const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
 
-          // Check if menu goes below viewport
-          if (rect.bottom + menuHeight + 10 > window.innerHeight) {
+          // Get header and input area heights
+          const header = document.querySelector('.header');
+          const inputArea = document.querySelector('.input-area');
+          const headerHeight = header ? header.getBoundingClientRect().height : 0;
+          const inputRect = inputArea ? inputArea.getBoundingClientRect() : null;
+          const inputTop = inputRect ? inputRect.top : viewportHeight;
+
+          // Calculate vertical position relative to bubble-row
+          let top = rect.bottom - rowRect.top + 5;
+
+          // Check if menu goes below viewport or behind input area
+          if (rect.bottom + menuHeight + 10 > inputTop) {
             // Position above the bubble instead
-            top = rect.top - menuHeight - 5 + window.scrollY;
+            top = rect.top - rowRect.top - menuHeight - 5;
+            
+            // If still goes above viewport or behind header, clamp it
+            const absoluteTop = rowRect.top + top;
+            if (absoluteTop < headerHeight + 5) {
+              top = headerHeight + 5 - rowRect.top;
+            }
           }
 
           actions.style.top = top + 'px';
 
-          // Calculate horizontal position
+          // Calculate horizontal position relative to bubble-row
           if (isSentMsg) {
             // For sent messages (right side)
-            const rightPos = window.innerWidth - rect.right;
+            const rightPos = rowRect.right - rect.right;
 
             // Check if menu goes off left edge
-            if (rect.right - menuWidth < 0) {
+            if (rect.right - menuWidth < 10) {
               // Align to left edge with padding
-              actions.style.left = '10px';
+              actions.style.left = (10 - rowRect.left) + 'px';
               actions.style.right = 'auto';
             } else {
               actions.style.right = rightPos + 'px';
@@ -3947,12 +3972,12 @@
             }
           } else {
             // For received messages (left side)
-            const leftPos = rect.left;
+            const leftPos = rect.left - rowRect.left;
 
             // Check if menu goes off right edge
-            if (leftPos + menuWidth > window.innerWidth) {
+            if (rect.left + menuWidth > viewportWidth - 10) {
               // Align to right edge with padding
-              actions.style.right = '10px';
+              actions.style.right = (10 - (rowRect.right - viewportWidth)) + 'px';
               actions.style.left = 'auto';
             } else {
               actions.style.left = leftPos + 'px';
