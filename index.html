@@ -553,11 +553,25 @@
     }
 
     .reply-cancel-btn {
-      color: #FFFFFF;
+      color: #ccc;
       cursor: pointer;
-      padding: 4px;
-      font-size: 16px;
+      padding: 0;
+      font-size: 14px;
+      background: #111;
+      border: none;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.15s;
+      clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+    }
 
+    .reply-cancel-btn:active {
+      transform: scale(0.95);
+      background: #1a1a1a;
     }
 
     /* Image Upload & Preview CSS */
@@ -836,10 +850,25 @@
     }
 
     .edit-cancel-btn {
-      color: rgba(255,255,255,0.4);
+      color: #ccc;
       cursor: pointer;
-      padding: 2px 4px;
-      font-size: 12px;
+      padding: 0;
+      font-size: 14px;
+      background: #111;
+      border: none;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.15s;
+      clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+    }
+
+    .edit-cancel-btn:active {
+      transform: scale(0.95);
+      background: #1a1a1a;
     }
 
     .edited-label {
