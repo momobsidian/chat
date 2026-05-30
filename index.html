@@ -3748,6 +3748,38 @@
             actions.appendChild(reactItem);
           }
 
+          // Copy option - available for messages with text (if not deleted)
+          if (!msg.deleted && msg.text) {
+            const copyItem = document.createElement('div');
+            copyItem.className = 'message-action-item';
+            copyItem.innerHTML = '<i class="fa-solid fa-copy"></i><span>Copy</span>';
+            copyItem.onclick = async (e) => {
+              e.stopPropagation();
+              try {
+                await navigator.clipboard.writeText(msg.text);
+                // Visual feedback - briefly change the text
+                const span = copyItem.querySelector('span');
+                const originalText = span.textContent;
+                span.textContent = 'Copied!';
+                setTimeout(() => {
+                  if (actions.parentNode) {
+                    span.textContent = originalText;
+                  }
+                }, 1000);
+              } catch (err) {
+                console.error('Failed to copy text:', err);
+              }
+              // Don't close menu immediately so user can see "Copied!" feedback
+              setTimeout(() => {
+                if (actions.parentNode) {
+                  actions.remove();
+                  activeMessageActions = null;
+                }
+              }, 1200);
+            };
+            actions.appendChild(copyItem);
+          }
+
           // Edit option - only for own messages (if not deleted)
           if (isSent && !msg.deleted) {
             const editItem = document.createElement('div');
