@@ -612,20 +612,21 @@
     .media-menu-btn {
       width: 28px;
       height: 28px;
-      background: var(--surface-light);
-      border: 1px solid var(--border);
+      background: #111;
+      border: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text);
+      color: #ccc;
       font-size: 14px;
       cursor: pointer;
-
       flex-shrink: 0;
+      transition: background 0.15s, transform 0.15s;
     }
 
     .media-menu-btn:active {
       transform: scale(0.95);
+      background: #1a1a1a;
     }
 
     .media-wrapper {
