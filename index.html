@@ -2055,9 +2055,8 @@
     </div>
   </div>
 
-  <script type="module">
-    const mainAppHTML = `
-  <div class="app">
+  <!-- Main App (hidden until authenticated) -->
+  <div class="app hidden" id="mainApp" style="display: none;">
     <div class="header">
       <div class="header-side-tab">
         <span class="rotated">Chat</span>
@@ -2239,7 +2238,9 @@
         </div>
       </div>
     </div>
-  </div>`;
+  </div>
+
+  <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, set, get, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -2418,8 +2419,12 @@
       }
 
       async function initMainApp() {
-        // Inject app HTML
-        document.body.insertAdjacentHTML('beforeend', mainAppHTML);
+        // Show main app
+        const mainApp = document.getElementById("mainApp");
+        if (mainApp) {
+          mainApp.classList.remove("hidden");
+          mainApp.style.display = "flex";
+        }
 
         // Fetch injected elements
         var messagesEl = document.getElementById("messages");
