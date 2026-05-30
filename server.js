@@ -244,7 +244,7 @@ const server = http.createServer((req, res) => {
         const device = data.device || 'Unknown';
         const time = new Date().toLocaleTimeString();
         
-        log.event(`VISIT      |   Login Page    | Device: ${device} | Time: ${time}`);
+        log.event(`VISIT      |   Login Page     | Device: ${device} | Time: ${time}`);
         sendDiscord(`🚨 **Login Page Visited**\nDevice: ${device}\nTime: ${time}`);
         sendPushover('Login Page Visited', `Device: ${device} | Time: ${time}`);
         if (typeof sendTelegram === 'function') {
