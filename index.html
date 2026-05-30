@@ -394,6 +394,17 @@
       white-space: pre-wrap;
     }
 
+    .bubble-text a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
+    .bubble-text a:hover {
+      opacity: 0.8;
+    }
+
     .emoji-only {
       font-size: 36px !important;
       line-height: 1.2;
@@ -2433,6 +2444,54 @@
         var userName = document.getElementById("userName");
         var inputFlashBtn = document.querySelector('.btn-flash');
 
+        // Helper to linkify URLs in text
+        const linkifyText = (text) => {
+          // URL regex pattern - matches http(s), www, and common TLDs
+          const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}[^\s]*)/g;
+          
+          // Split text by URLs and create HTML
+          const parts = [];
+          let lastIndex = 0;
+          let match;
+          
+          while ((match = urlRegex.exec(text)) !== null) {
+            // Add text before the URL
+            if (match.index > lastIndex) {
+              parts.push(document.createTextNode(text.substring(lastIndex, match.index)));
+            }
+            
+            // Create link element
+            const link = document.createElement('a');
+            let url = match[0];
+            
+            // Add protocol if missing
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              link.href = 'https://' + url;
+            } else {
+              link.href = url;
+            }
+            
+            link.textContent = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            
+            // Prevent link click from triggering message actions
+            link.addEventListener('click', (e) => {
+              e.stopPropagation();
+            });
+            
+            parts.push(link);
+            lastIndex = match.index + match[0].length;
+          }
+          
+          // Add remaining text
+          if (lastIndex < text.length) {
+            parts.push(document.createTextNode(text.substring(lastIndex)));
+          }
+          
+          return parts.length > 0 ? parts : [document.createTextNode(text)];
+        };
+
         // User settings state
         let userSettings = {
           fontSize: 15,
@@ -3531,7 +3590,11 @@
             if (isEmojiOnly(msg.text) && !msg.replyTo) {
               textEl.classList.add("emoji-only");
             }
-            textEl.textContent = msg.text;
+            
+            // Linkify URLs in the text
+            const linkifiedParts = linkifyText(msg.text);
+            linkifiedParts.forEach(part => textEl.appendChild(part));
+            
             bubble.appendChild(textEl);
           }
 
@@ -4459,7 +4522,11 @@
             if (payload.text) {
               const textEl = document.createElement("div");
               textEl.className = "bubble-text";
-              textEl.textContent = payload.text;
+              
+              // Linkify URLs in the text
+              const linkifiedParts = linkifyText(payload.text);
+              linkifiedParts.forEach(part => textEl.appendChild(part));
+              
               skelBubble.appendChild(textEl);
             }
             skeletonRow.appendChild(skelBubble);
