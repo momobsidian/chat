@@ -3654,39 +3654,47 @@
             renderReactions(reactionContainer, msg.reactions, msg.id);
           }
 
-          // Click handler for message actions (react + edit for own messages)
-          // Don't add click handler for deleted messages without reactions
+          // Long-press handler for message actions (better UX - prevents accidental opens)
+          // Works for all messages (not deleted or has reactions)
           if (!msg.deleted || msg.reactions) {
             bubble.style.cursor = 'pointer';
-            bubble.addEventListener('click', (e) => {
-              // Don't trigger if clicking on image, media wrapper, reaction badges, or reply context
-              if (e.target.classList.contains('bubble-attachment') ||
-                e.target.closest('.media-wrapper') ||
-                e.target.closest('.reaction-badges') ||
-                e.target.closest('.bubble-reply-context')) {
-                return;
-              }
-              
-              // If clicking on a link, don't open menu (let link work normally)
-              if (e.target.tagName === 'A') {
-                return;
-              }
-              
-              showMessageActions(msg.id, bubble, e);
-            });
             
-            // Add long-press support for links to open menu
             let longPressTimer = null;
             let longPressTriggered = false;
+            let startX = 0;
+            let startY = 0;
+            const moveThreshold = 10; // pixels - cancel long press if moved too much
             
+            // Mouse events (desktop)
             bubble.addEventListener('mousedown', (e) => {
-              if (e.target.tagName === 'A') {
-                longPressTriggered = false;
-                longPressTimer = setTimeout(() => {
-                  longPressTriggered = true;
-                  e.preventDefault();
-                  showMessageActions(msg.id, bubble, e);
-                }, 500); // 500ms long press
+              // Don't trigger on images, media wrapper, reaction badges, or reply context
+              if (e.target.classList.contains('bubble-attachment') ||
+                  e.target.closest('.media-wrapper') ||
+                  e.target.closest('.reaction-badges') ||
+                  e.target.closest('.bubble-reply-context')) {
+                return;
+              }
+              
+              longPressTriggered = false;
+              startX = e.clientX;
+              startY = e.clientY;
+              
+              longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                showMessageActions(msg.id, bubble, e);
+              }, 500); // 500ms long press
+            });
+            
+            bubble.addEventListener('mousemove', (e) => {
+              if (longPressTimer) {
+                const deltaX = Math.abs(e.clientX - startX);
+                const deltaY = Math.abs(e.clientY - startY);
+                
+                // Cancel long press if moved too much
+                if (deltaX > moveThreshold || deltaY > moveThreshold) {
+                  clearTimeout(longPressTimer);
+                  longPressTimer = null;
+                }
               }
             });
             
@@ -3704,15 +3712,38 @@
               }
             });
             
-            // Touch support for mobile
+            // Touch events (mobile)
             bubble.addEventListener('touchstart', (e) => {
-              if (e.target.tagName === 'A') {
-                longPressTriggered = false;
-                longPressTimer = setTimeout(() => {
-                  longPressTriggered = true;
-                  e.preventDefault();
-                  showMessageActions(msg.id, bubble, e);
-                }, 500);
+              // Don't trigger on images, media wrapper, reaction badges, or reply context
+              if (e.target.classList.contains('bubble-attachment') ||
+                  e.target.closest('.media-wrapper') ||
+                  e.target.closest('.reaction-badges') ||
+                  e.target.closest('.bubble-reply-context')) {
+                return;
+              }
+              
+              longPressTriggered = false;
+              const touch = e.touches[0];
+              startX = touch.clientX;
+              startY = touch.clientY;
+              
+              longPressTimer = setTimeout(() => {
+                longPressTriggered = true;
+                showMessageActions(msg.id, bubble, e);
+              }, 500);
+            });
+            
+            bubble.addEventListener('touchmove', (e) => {
+              if (longPressTimer) {
+                const touch = e.touches[0];
+                const deltaX = Math.abs(touch.clientX - startX);
+                const deltaY = Math.abs(touch.clientY - startY);
+                
+                // Cancel long press if moved too much
+                if (deltaX > moveThreshold || deltaY > moveThreshold) {
+                  clearTimeout(longPressTimer);
+                  longPressTimer = null;
+                }
               }
             });
             
@@ -3721,7 +3752,8 @@
                 clearTimeout(longPressTimer);
                 longPressTimer = null;
               }
-              // If long press was triggered, prevent the link from opening
+              
+              // If long press was triggered and target is a link, prevent link from opening
               if (longPressTriggered && e.target.tagName === 'A') {
                 e.preventDefault();
                 longPressTriggered = false;
