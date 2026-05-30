@@ -1097,7 +1097,7 @@
       left: 0;
       margin-bottom: 8px;
       background: #0a0a0a;
-      border: 1px solid #2a2a2a;
+      border: none;
       border-radius: 0;
       padding: 4px;
       display: none;
@@ -1296,55 +1296,13 @@
       justify-content: center;
       height: 54px;
       background: rgba(255, 255, 255, 0.07);
-      border: none;
-      border-radius: 0;
-      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
       cursor: pointer;
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
-    }
-
-    .keypad-btn::before {
-      content: '';
-      position: absolute;
-      inset: -1px;
-      background: conic-gradient(
-        from 0deg at 50% 50%,
-        transparent 0deg,
-        rgba(255, 255, 255, 0.4) 90deg,
-        rgba(255, 255, 255, 0.15) 180deg,
-        transparent 270deg,
-        transparent 360deg
-      );
       clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-      animation: borderRotate 3s linear infinite;
-      pointer-events: none;
-    }
-
-    /* Odd buttons rotate counter-clockwise */
-    .keypad-btn:nth-child(odd)::before {
-      animation: borderRotateReverse 3s linear infinite;
-    }
-
-    .keypad-btn::after {
-      content: '';
-      position: absolute;
-      inset: 1px;
-      background: rgba(10, 10, 10, 0.95);
-      clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
-      pointer-events: none;
-    }
-
-    @keyframes borderRotate {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes borderRotateReverse {
-      0% { transform: rotate(360deg); }
-      100% { transform: rotate(0deg); }
     }
 
     .keypad-btn:active,
@@ -1485,8 +1443,9 @@
       right: 0;
       margin-top: 6px;
       width: 180px;
-      background: #000000;
-      border: 1px solid var(--border);
+      background: rgba(10, 10, 10, 0.98);
+      backdrop-filter: blur(20px);
+      border: none;
       border-radius: 0;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
       z-index: 1000;
@@ -1633,7 +1592,7 @@
       margin-bottom: 8px;
       background: rgba(10, 10, 10, 0.98);
       backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      border: none;
       max-height: 50vh;
       display: none;
       flex-direction: column;
@@ -1721,7 +1680,7 @@
       font-size: 11px;
       color: rgba(255, 255, 255, 0.5);
       background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: none;
       cursor: pointer;
       white-space: nowrap;
       user-select: none;
@@ -1735,14 +1694,14 @@
     .emoji-tab.active {
       background: rgba(255, 255, 255, 0.12);
       color: rgba(255, 255, 255, 0.95);
-      border-color: rgba(255, 255, 255, 0.2);
+      border: none;
       box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
     }
 
     .sticker-tab:hover,
     .emoji-tab:hover {
       background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.15);
+      border: none;
     }
 
     .sticker-tab:active,
@@ -2065,162 +2024,13 @@
       text-transform: uppercase;
     }
 
-    /* ── TOUCH RIPPLE ── */
-    .touch-ripple {
-      position: fixed;
-      pointer-events: none;
-      z-index: 99999;
-      transform: scale(0);
-      opacity: 1;
-    }
 
-    .touch-ripple.r1 {
-      width: 40px; height: 40px;
-      margin-left: -20px; margin-top: -20px;
-      background: rgba(255, 255, 255, 0.3);
-      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-      animation: rippleRing 0.45s ease-out forwards;
-    }
-    .touch-ripple.r2 {
-      width: 72px; height: 72px;
-      margin-left: -36px; margin-top: -36px;
-      background: rgba(255, 255, 255, 0.13);
-      clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-      animation: rippleRing 0.6s ease-out 0.05s forwards;
-    }
-    .touch-ripple.r3 {
-      width: 110px; height: 110px;
-      margin-left: -55px; margin-top: -55px;
-      background: rgba(255, 255, 255, 0.05);
-      clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
-      animation: rippleRing 0.75s ease-out 0.1s forwards;
-    }
 
-    @keyframes rippleRing {
-      0%   { transform: scale(0); opacity: 1; }
-      100% { transform: scale(1); opacity: 0; }
-    }
 
-    /* ── SWIMMING TAIL EFFECT ── */
-    .swim-tail {
-      position: fixed;
-      width: auto;
-      height: 22px;
-      padding: 0 10px;
-      background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.18) 0%, 
-        rgba(255, 255, 255, 0.12) 100%);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      border-radius: 11px;
-      pointer-events: none;
-      z-index: 99998;
-      animation: swimFade 1.5s ease-out forwards;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 8px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.95);
-      font-family: 'DM Mono', monospace;
-      letter-spacing: 1px;
-      white-space: nowrap;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-      box-shadow: 
-        0 2px 8px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    }
-
-    .swim-particle {
-      position: fixed;
-      width: 5px;
-      height: 5px;
-      background: radial-gradient(circle, 
-        rgba(255, 255, 255, 0.9) 0%, 
-        rgba(255, 255, 255, 0.5) 50%,
-        transparent 100%);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 99997;
-      animation: particleFade 1.2s ease-out forwards;
-    }
-
-    @keyframes swimFade {
-      0% { 
-        transform: scale(1);
-        opacity: 1;
-      }
-      100% { 
-        transform: scale(0.8);
-        opacity: 0;
-      }
-    }
-
-    @keyframes particleFade {
-      0% { 
-        transform: scale(1) translateY(0);
-        opacity: 1;
-      }
-      100% { 
-        transform: scale(0.3) translateY(-20px);
-        opacity: 0;
-      }
-    }
-
-    /* ── TOUCH COORDINATE DISPLAY ── */
-    .touch-crosshair {
-      position: fixed;
-      pointer-events: none;
-      z-index: 99997;
-      display: none;
-    }
-
-    .touch-crosshair.active {
-      display: block;
-    }
-
-    .crosshair-line-x {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 100vh;
-      width: 1px;
-      background: rgba(255, 255, 255, 0.15);
-      pointer-events: none;
-    }
-
-    .crosshair-line-y {
-      position: fixed;
-      left: 0;
-      top: 0;
-      width: 100vw;
-      height: 1px;
-      background: rgba(255, 255, 255, 0.15);
-      pointer-events: none;
-    }
-
-    .touch-coords {
-      position: fixed;
-      left: 0;
-      top: 0;
-      background: rgba(0, 0, 0, 0.7);
-      color: rgba(255, 255, 255, 0.8);
-      padding: 4px 8px;
-      font-size: 10px;
-      font-family: 'DM Mono', monospace;
-      border-radius: 3px;
-      pointer-events: none;
-      white-space: nowrap;
-    }
   </style>
 </head>
 
 <body>
-  <!-- Touch Coordinate Crosshair -->
-  <div class="touch-crosshair" id="touchCrosshair">
-    <div class="crosshair-line-x" id="crosshairX"></div>
-    <div class="crosshair-line-y" id="crosshairY"></div>
-    <div class="touch-coords" id="touchCoords">X: 0, Y: 0</div>
-  </div>
 
   <div id="auth-screen">
     <div class="auth-container">
@@ -4802,90 +4612,7 @@
     })();
   </script>
 
-  <script>
-    // ── GLOBAL TOUCH RIPPLE ──
-    document.addEventListener('pointerdown', (e) => {
-      ['r1', 'r2', 'r3'].forEach(cls => {
-        const r = document.createElement('div');
-        r.className = 'touch-ripple ' + cls;
-        r.style.left = e.clientX + 'px';
-        r.style.top  = e.clientY + 'px';
-        document.body.appendChild(r);
-        r.addEventListener('animationend', () => r.remove());
-      });
-    });
 
-    // ── SWIMMING TAIL EFFECT ──
-    let lastSwimTime = 0;
-    const swimThrottle = 40; // ms between tail particles
-
-    // Touch coordinate crosshair elements
-    const touchCrosshair = document.getElementById('touchCrosshair');
-    const crosshairX = document.getElementById('crosshairX');
-    const crosshairY = document.getElementById('crosshairY');
-    const touchCoords = document.getElementById('touchCoords');
-
-    // Simple direct updates - no RAF, no transitions
-    function updateCrosshair(x, y) {
-      if (!crosshairX || !crosshairY || !touchCoords || !touchCrosshair) return;
-      
-      touchCrosshair.classList.add('active');
-      crosshairX.style.left = x + 'px';
-      crosshairY.style.top = y + 'px';
-      touchCoords.style.left = (x + 10) + 'px';
-      touchCoords.style.top = (y - 100) + 'px';
-      touchCoords.textContent = `X: ${Math.round(x)}, Y: ${Math.round(y)}`;
-    }
-
-    function hideCrosshair() {
-      if (touchCrosshair) touchCrosshair.classList.remove('active');
-    }
-
-    function createSwimTail(x, y) {
-      const now = Date.now();
-      if (now - lastSwimTime < swimThrottle) return;
-      lastSwimTime = now;
-
-      const tail = document.createElement('div');
-      tail.className = 'swim-tail';
-      tail.textContent = 'Shajeda';
-      tail.style.left = (x - 25) + 'px';
-      tail.style.top = (y - 11) + 'px';
-      document.body.appendChild(tail);
-      setTimeout(() => tail.remove(), 1500);
-
-      for (let i = 0; i < 3; i++) {
-        setTimeout(() => {
-          const particle = document.createElement('div');
-          particle.className = 'swim-particle';
-          particle.style.left = (x + (Math.random() - 0.5) * 30) + 'px';
-          particle.style.top = (y + (Math.random() - 0.5) * 30) + 'px';
-          document.body.appendChild(particle);
-          setTimeout(() => particle.remove(), 1200);
-        }, i * 50);
-      }
-    }
-
-    // Passive listeners for better scroll performance
-    document.addEventListener('pointermove', (e) => {
-      updateCrosshair(e.clientX, e.clientY);
-      createSwimTail(e.clientX, e.clientY);
-    }, { passive: true });
-
-    document.addEventListener('touchmove', (e) => {
-      if (e.touches[0]) {
-        updateCrosshair(e.touches[0].clientX, e.touches[0].clientY);
-        createSwimTail(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    }, { passive: true });
-
-    document.addEventListener('pointerdown', (e) => {
-      updateCrosshair(e.clientX, e.clientY);
-    }, { passive: true });
-
-    document.addEventListener('pointerup', hideCrosshair, { passive: true });
-    document.addEventListener('touchend', hideCrosshair, { passive: true });
-  </script>
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516"
     integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg=="
     data-cf-beacon='{"version":"2024.11.0","token":"727ef8cfef934223a43195d3da5b8b57","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}'
