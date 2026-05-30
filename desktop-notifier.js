@@ -64,7 +64,7 @@ db.ref('presence').on('value', (snapshot) => {
       // We only notify if it's a change or if they are already online when we start the script
       if (state === 'online') {
         const msg = `${user} is ONLINE on ${device}`;
-        log.event(`ONLINE  | ${user} | Device: ${device} | Time: ${time}`);
+        log.event(`ONLINE     |   ${user.padEnd(18)} | Device: ${device} | Time: ${time}`);
         
         // Native Desktop Notification
         notifier.notify({
@@ -75,7 +75,7 @@ db.ref('presence').on('value', (snapshot) => {
         });
       } else {
         const msg = `${user} went OFFLINE`;
-        log.event(`OFFLINE | ${user} | Time: ${time}`);
+        log.event(`OFFLINE    |   ${user.padEnd(18)} | Time: ${time}`);
         
         // Only trigger desktop notification for offline if it wasn't the first load
         if (prev !== undefined) {

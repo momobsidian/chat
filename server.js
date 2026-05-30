@@ -244,7 +244,7 @@ const server = http.createServer((req, res) => {
         const device = data.device || 'Unknown';
         const time = new Date().toLocaleTimeString();
         
-        log.event(`VISIT   | Login Page | Device: ${device} | Time: ${time}`);
+        log.event(`VISIT      |   Login Page    | Device: ${device} | Time: ${time}`);
         sendDiscord(`🚨 **Login Page Visited**\nDevice: ${device}\nTime: ${time}`);
         sendPushover('Login Page Visited', `Device: ${device} | Time: ${time}`);
         if (typeof sendTelegram === 'function') {
@@ -335,7 +335,7 @@ function watchPresence() {
         const time = new Date().toLocaleTimeString();
 
         if (state === 'online') {
-          log.event(`ONLINE  | ${user} | Device: ${device} | Time: ${time}`);
+          log.event(`ONLINE     |   ${user.padEnd(18)} | Device: ${device} | Time: ${time}`);
           sendDiscord(`${device} is online | ${time}`);
           sendPushover('User Online', `${device} is online | ${time}`);
           sendTelegram(`🟢 <b>User Online</b>\n<b>${user}</b> is online on ${device} at ${time}`);
@@ -353,7 +353,7 @@ function watchPresence() {
           });
 
         } else {
-          log.event(`OFFLINE | ${user} | Time: ${time}`);
+          log.event(`OFFLINE    |   ${user.padEnd(18)} | Time: ${time}`);
         }
       }
     }
