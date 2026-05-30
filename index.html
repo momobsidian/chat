@@ -2477,9 +2477,17 @@
             link.target = '_blank';
             link.rel = 'noopener noreferrer';
             
-            // Prevent link click from triggering message actions
+            // Only prevent click propagation for actual clicks, not long-press
+            // This allows the message menu to open on long-press even on links
             link.addEventListener('click', (e) => {
+              // Only stop propagation if it's a quick click (not a long-press)
+              // Long-press will have already triggered the menu
               e.stopPropagation();
+            });
+            
+            // Prevent context menu on links to allow long-press menu
+            link.addEventListener('contextmenu', (e) => {
+              e.preventDefault();
             });
             
             parts.push(link);
@@ -3629,7 +3637,73 @@
                 e.target.closest('.bubble-reply-context')) {
                 return;
               }
+              
+              // If clicking on a link, don't open menu (let link work normally)
+              if (e.target.tagName === 'A') {
+                return;
+              }
+              
               showMessageActions(msg.id, bubble, e);
+            });
+            
+            // Add long-press support for links to open menu
+            let longPressTimer = null;
+            let longPressTriggered = false;
+            
+            bubble.addEventListener('mousedown', (e) => {
+              if (e.target.tagName === 'A') {
+                longPressTriggered = false;
+                longPressTimer = setTimeout(() => {
+                  longPressTriggered = true;
+                  e.preventDefault();
+                  showMessageActions(msg.id, bubble, e);
+                }, 500); // 500ms long press
+              }
+            });
+            
+            bubble.addEventListener('mouseup', (e) => {
+              if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+              }
+            });
+            
+            bubble.addEventListener('mouseleave', (e) => {
+              if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+              }
+            });
+            
+            // Touch support for mobile
+            bubble.addEventListener('touchstart', (e) => {
+              if (e.target.tagName === 'A') {
+                longPressTriggered = false;
+                longPressTimer = setTimeout(() => {
+                  longPressTriggered = true;
+                  e.preventDefault();
+                  showMessageActions(msg.id, bubble, e);
+                }, 500);
+              }
+            });
+            
+            bubble.addEventListener('touchend', (e) => {
+              if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+              }
+              // If long press was triggered, prevent the link from opening
+              if (longPressTriggered && e.target.tagName === 'A') {
+                e.preventDefault();
+                longPressTriggered = false;
+              }
+            });
+            
+            bubble.addEventListener('touchcancel', (e) => {
+              if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+              }
             });
           }
 
