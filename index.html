@@ -434,24 +434,25 @@
       top: 50%;
       transform: translateY(-50%) scale(0.5);
       opacity: 0;
-      color: var(--text-muted);
+      color: #ccc;
       font-size: 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: #111;
+      border: none;
       border-radius: 0;
       width: 28px;
       height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
-
+      transition: transform 0.2s, opacity 0.2s, background 0.15s;
+      clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
     }
 
     .reply-icon-indicator.active {
       transform: translateY(-50%) scale(1);
       opacity: 1;
-      color: var(--text);
-      background: var(--surface-light);
+      color: #fff;
+      background: #1a1a1a;
     }
 
     .bubble-reply-context {
