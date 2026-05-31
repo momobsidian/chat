@@ -1991,7 +1991,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 40px;
+      gap: 60px;
       z-index: 10000;
       transition: opacity 0.6s ease;
     }
@@ -2001,64 +2001,60 @@
       pointer-events: none;
     }
 
-    .creative-core {
+    .loader-logo {
+      width: 120px;
+      height: 120px;
+      animation: cinematicZoomOut 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    .loader-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    @keyframes cinematicZoomOut {
+      0% {
+        transform: scale(3);
+        opacity: 0;
+      }
+      40% {
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .loader-progress-container {
+      width: 200px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
       position: relative;
-      width: 32px;
-      height: 32px;
-      perspective: 1000px;
     }
 
-    .cc-box {
-      position: absolute;
-      width: 32px;
-      height: 32px;
-      background: rgba(255, 255, 255, 0.15);
-      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
-      animation: flipBox 2s ease-in-out infinite;
-      transform-style: preserve-3d;
+    .loader-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.6));
+      border-radius: 10px;
+      width: 0%;
+      animation: progressFill 2s ease-in-out infinite;
     }
 
-    @keyframes flipBox {
-      0% { 
-        transform: rotateY(0deg) rotateX(0deg);
+    @keyframes progressFill {
+      0% {
+        width: 0%;
       }
-      25% { 
-        transform: rotateY(180deg) rotateX(0deg);
+      50% {
+        width: 70%;
       }
-      50% { 
-        transform: rotateY(180deg) rotateX(180deg);
+      100% {
+        width: 100%;
       }
-      75% { 
-        transform: rotateY(0deg) rotateX(180deg);
-      }
-      100% { 
-        transform: rotateY(0deg) rotateX(0deg);
-      }
-    }
-
-    .loader-text {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .loader-title {
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
-      font-weight: 400;
-      letter-spacing: 0.15em;
-      color: rgba(255, 255, 255, 0.6);
-      text-transform: uppercase;
-    }
-
-    .loader-status {
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      font-weight: 300;
-      letter-spacing: 0.1em;
-      color: rgba(255, 255, 255, 0.3);
-      text-transform: uppercase;
     }
 
 
@@ -2403,12 +2399,11 @@
         earlyLoader.className = 'app-loader';
         earlyLoader.id = 'earlyLoader';
         earlyLoader.innerHTML = `
-          <div class="creative-core">
-            <div class="cc-box"></div>
+          <div class="loader-logo">
+            <img src="ChatGPT Image May 31, 2026, 11_01_51 AM (1) (1).png" alt="Logo">
           </div>
-          <div class="loader-text">
-            <div class="loader-title">Loading</div>
-            <div class="loader-status">Please wait</div>
+          <div class="loader-progress-container">
+            <div class="loader-progress-bar"></div>
           </div>
         `;
         document.body.appendChild(earlyLoader);
