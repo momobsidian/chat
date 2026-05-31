@@ -11,15 +11,45 @@ A high-performance, real-time messaging application built with Node.js and Fireb
   - Discord Webhooks
   - Pushover
   - Firebase Cloud Messaging (FCM) for Android
+  - **ESP32 IoT Devices** (NEW!)
 - Live Android Push: Integrated WebSocket server to push instant state updates to Android clients.
+- **ESP32 Global Notifications**: Send real-time notifications to ESP32 devices anywhere in the world via WebSocket with OLED display and buzzer support.
 - Standalone Desktop Monitor: A dedicated `desktop-notifier.js` script that provides native OS desktop notifications.
 - Security-First: Database operations are handled server-side using the Firebase Admin SDK, keeping credentials secure and out of the client interface.
+
+## 🆕 ESP32 IoT Notification System
+
+Get real-time notifications on an ESP32 device with OLED display and buzzer when someone comes online!
+
+### Quick Start
+1. Wire up ESP32 with OLED display and buzzer (see `ESP32-WIRING.md`)
+2. Upload `esp32-notification-client.ino` (pre-configured with WiFi)
+3. Watch notifications appear globally!
+
+### Documentation
+- **Quick Start**: `ESP32-QUICK-START.md` - Get running in 5 minutes
+- **Complete Guide**: `ESP32-COMPLETE-GUIDE.md` - Full documentation
+- **Wiring**: `ESP32-WIRING.md` - Hardware setup and diagrams
+- **Detailed Setup**: `ESP32-SETUP.md` - Advanced configuration
+
+### Features
+- ✅ OLED display shows user, device, and time
+- ✅ Buzzer plays notification melody
+- ✅ LED blinks on notification
+- ✅ Auto-reconnect with server fallback
+- ✅ Works anywhere with internet
+- ✅ Pre-configured WiFi (Sayem / Sayem123)
+
+### WebSocket Endpoints
+- **Primary**: `wss://saayem.qzz.io/esp32`
+- **Fallback**: Render hosted URL (configurable)
 
 ## Prerequisites
 
 - Node.js (v14 or higher recommended)
 - Firebase Project with Realtime Database enabled
 - Service Account Keys for Firebase
+- (Optional) ESP32 board with OLED display and buzzer for IoT notifications
 
 ## Installation
 
@@ -64,8 +94,15 @@ To run the standalone desktop presence monitor on your personal computer:
 node desktop-notifier.js
 ```
 
+To test ESP32 WebSocket connection:
+```bash
+node test-esp32-connection.js
+```
+
 ## Architecture
 
 - Frontend: Native HTML, CSS, and Vanilla JavaScript for maximum performance and a smooth, native-like mobile experience.
 - Backend: Node.js server handling static file delivery, WebSocket connections, and secure Firebase Admin SDK operations.
+- WebSocket Server: Dual-endpoint WebSocket server for Android and ESP32 clients with automatic reconnection and heartbeat.
+- IoT Integration: ESP32 support with OLED display and buzzer for physical notifications.
 - Deployment: Designed to be easily hosted on platforms like Render or Heroku with environment variable injection.
