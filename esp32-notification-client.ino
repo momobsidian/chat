@@ -67,6 +67,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 // ── State Variables ─────────────────────────────────────────────────────────
 bool ledState = false;
 unsigned long lastNotificationTime = 0;
+unsigned long lastPingTime = 0;
+unsigned long lastPongTime = 0;
+bool isConnected = false;
 String lastUser = "";
 String lastDevice = "";
 
@@ -161,6 +164,26 @@ void loop() {
     connectWiFi();
   }
   
+  // Check WebSocket connection health (heartbeat)
+  unsigned long now = millis();
+  
+  // If connected, send PING every 15 seconds
+  if (isConnected && (now - lastPingTime > 15000)) {
+    webSocket.sendTXT("{\"type\":\"PONG\"}");  // Send PONG as heartbeat
+    lastPingTime = now;
+    Serial.println("→ Heartbeat sent");
+  }
+  
+  // If no PONG received for 45 seconds, assume disconnected
+  if (isConnected && (now - lastPongTime > 45000)) {
+    Serial.println("⚠ No heartbeat response - reconnecting...");
+    isConnected = false;
+    webSocket.disconnect();
+    delay(1000);
+    webSocket.beginSSL(current_host, current_port, ws_path);
+    displayStatus("Reconnecting...");
+  }
+  
   // Auto-clear display after 30 seconds of last notification
   if (lastNotificationTime > 0 && millis() - lastNotificationTime > 30000) {
     displayStatus("Waiting...");
@@ -205,6 +228,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_DISCONNECTED:
       Serial.println("⚠ WebSocket Disconnected");
+      isConnected = false;
       digitalWrite(LED_PIN, LOW);
       displayStatus("Disconnected!");
       
@@ -218,6 +242,10 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     case WStype_CONNECTED:
       Serial.println("✓ WebSocket Connected!");
       Serial.printf("  Server: wss://%s:%d%s\n", current_host, current_port, ws_path);
+      
+      isConnected = true;
+      lastPongTime = millis();  // Reset heartbeat timer
+      lastPingTime = millis();
       
       displayStatus("Connected!");
       
@@ -252,9 +280,12 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
           handleLoginVisit(doc);
         } else if (strcmp(msgType, "PING") == 0) {
           webSocket.sendTXT("{\"type\":\"PONG\"}");
+          lastPongTime = millis();  // Update heartbeat timer
+          Serial.println("← PING (responded with PONG)");
         } else if (strcmp(msgType, "WELCOME") == 0) {
           Serial.println("✓ Server welcomed ESP32");
           displayStatus("Ready!");
+          lastPongTime = millis();  // Update heartbeat timer
         }
       }
       break;
@@ -265,11 +296,13 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       break;
       
     case WStype_PING:
-      Serial.println("← PING");
+      Serial.println("← WebSocket PING");
+      lastPongTime = millis();  // Update heartbeat timer
       break;
       
     case WStype_PONG:
-      Serial.println("→ PONG");
+      Serial.println("→ WebSocket PONG");
+      lastPongTime = millis();  // Update heartbeat timer
       break;
   }
 }
