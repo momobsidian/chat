@@ -16,7 +16,7 @@
  */
 
 #include <WiFi.h>
-#include <WebSocketsClient.h>
+#include <WebSocketsClient_Generic.h>
 #include <ArduinoJson.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -226,27 +226,29 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       break;
       
     case WStype_TEXT:
-      Serial.printf("\n[RX] %s\n", payload);
-      
-      // Parse JSON
-      StaticJsonDocument<512> doc;
-      DeserializationError error = deserializeJson(doc, payload);
-      
-      if (error) {
-        Serial.printf("✗ JSON parse error: %s\n", error.c_str());
-        return;
-      }
-      
-      // Handle different message types
-      const char* msgType = doc["type"];
-      
-      if (strcmp(msgType, "PRESENCE_UPDATE") == 0) {
-        handlePresenceUpdate(doc);
-      } else if (strcmp(msgType, "PING") == 0) {
-        webSocket.sendTXT("{\"type\":\"PONG\"}");
-      } else if (strcmp(msgType, "WELCOME") == 0) {
-        Serial.println("✓ Server welcomed ESP32");
-        displayStatus("Ready!");
+      {
+        Serial.printf("\n[RX] %s\n", payload);
+        
+        // Parse JSON
+        StaticJsonDocument<512> doc;
+        DeserializationError error = deserializeJson(doc, payload);
+        
+        if (error) {
+          Serial.printf("✗ JSON parse error: %s\n", error.c_str());
+          return;
+        }
+        
+        // Handle different message types
+        const char* msgType = doc["type"];
+        
+        if (strcmp(msgType, "PRESENCE_UPDATE") == 0) {
+          handlePresenceUpdate(doc);
+        } else if (strcmp(msgType, "PING") == 0) {
+          webSocket.sendTXT("{\"type\":\"PONG\"}");
+        } else if (strcmp(msgType, "WELCOME") == 0) {
+          Serial.println("✓ Server welcomed ESP32");
+          displayStatus("Ready!");
+        }
       }
       break;
       
