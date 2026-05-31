@@ -2032,27 +2032,26 @@
       height: 3px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
-      overflow: hidden;
       position: relative;
     }
 
     .loader-progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.6));
+      background: rgba(255, 255, 255, 0.6);
       border-radius: 10px;
       width: 0%;
-      animation: progressFill 2s ease-in-out infinite;
+      animation: progressFill 2.5s ease-in-out forwards;
     }
 
     @keyframes progressFill {
       0% {
         width: 0%;
       }
-      50% {
-        width: 70%;
+      60% {
+        width: 75%;
       }
       100% {
-        width: 100%;
+        width: 95%;
       }
     }
 
