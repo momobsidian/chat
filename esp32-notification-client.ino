@@ -54,6 +54,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 // ── Buzzer Configuration ────────────────────────────────────────────────────
 #define BUZZER_PIN 25  // Change to your buzzer signal pin (GPIO 25)
+#define BUZZER_CHANNEL 0  // PWM channel for buzzer
+#define BUZZER_RESOLUTION 8  // 8-bit resolution
 
 // ── LED Configuration (optional) ────────────────────────────────────────────
 #define LED_PIN 2  // Built-in LED on most ESP32 boards
@@ -72,10 +74,13 @@ String lastDevice = "";
 void connectWiFi();
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length);
 void handlePresenceUpdate(JsonDocument& doc);
+void handleLoginVisit(JsonDocument& doc);
 void blinkLED(int times, int delayMs);
 void playBuzzer(int frequency, int duration);
 void playNotificationTone();
+void playLoginTone();
 void updateDisplay(const char* line1, const char* line2 = "", const char* line3 = "", const char* line4 = "");
+void displayLoginVisit(const char* device, const char* time);
 void displayNotification(const char* user, const char* device, const char* time);
 void displayStatus(const char* status);
 void switchServer();
@@ -96,9 +101,9 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
   
-  // Setup Buzzer
-  pinMode(BUZZER_PIN, OUTPUT);
-  digitalWrite(BUZZER_PIN, LOW);
+  // Setup Buzzer with PWM (ESP32 v3.x API)
+  ledcAttach(BUZZER_PIN, 2000, BUZZER_RESOLUTION);
+  ledcWrite(BUZZER_PIN, 0);  // Start silent
   
   // Initialize I2C
   Wire.begin(I2C_SDA, I2C_SCL);
@@ -243,6 +248,8 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
         
         if (strcmp(msgType, "PRESENCE_UPDATE") == 0) {
           handlePresenceUpdate(doc);
+        } else if (strcmp(msgType, "LOGIN_VISIT") == 0) {
+          handleLoginVisit(doc);
         } else if (strcmp(msgType, "PING") == 0) {
           webSocket.sendTXT("{\"type\":\"PONG\"}");
         } else if (strcmp(msgType, "WELCOME") == 0) {
@@ -304,93 +311,372 @@ void handlePresenceUpdate(JsonDocument& doc) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Display Functions
+// Handle Login Visit
 // ══════════════════════════════════════════════════════════════════════════════
+void handleLoginVisit(JsonDocument& doc) {
+  const char* device = doc["device"];
+  const char* time = doc["time"];
+  
+  Serial.println("\n╔════════════════════════════════════════╗");
+  Serial.println("║       LOGIN PAGE VISIT                 ║");
+  Serial.println("╠════════════════════════════════════════╣");
+  Serial.printf("║ Device: %-30s ║\n", device);
+  Serial.printf("║ Time:   %-30s ║\n", time);
+  Serial.println("╚════════════════════════════════════════╝\n");
+  
+  // Visual and audio feedback
+  displayLoginVisit(device, time);
+  
+  // Play different tone for login (more urgent)
+  playLoginTone();
+  
+  // Blink LED rapidly
+  blinkLED(7, 80);
+  
+  // Store last notification time
+  lastNotificationTime = millis();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Display Functions  ── PREMIUM REDESIGN (visual only, no logic changes)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Helper: draw a thin horizontal rule ─────────────────────────────────────
+static void drawRule(int y) {
+  display.drawFastHLine(0, y, SCREEN_WIDTH, SSD1306_WHITE);
+}
+
+// ── Helper: draw a rounded rectangle border ─────────────────────────────────
+static void drawRoundBorder() {
+  display.drawRoundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 4, SSD1306_WHITE);
+}
+
+// ── Helper: draw signal bars (3 bars, filled count = strength 0-3) ──────────
+static void drawSignalBars(int x, int y, int filled) {
+  // Three ascending bars: 3px, 5px, 7px tall, each 3px wide, 2px apart
+  for (int i = 0; i < 3; i++) {
+    int bw = 3, gap = 5;
+    int bh = 3 + i * 2;           // heights: 3, 5, 7
+    int bx = x + i * gap;
+    int by = y + (7 - bh);        // align bottoms
+    if (i < filled) {
+      display.fillRect(bx, by, bw, bh, SSD1306_WHITE);
+    } else {
+      display.drawRect(bx, by, bw, bh, SSD1306_WHITE);
+    }
+  }
+}
+
+// ── Helper: animated progress bar (call inside a loop before display()) ─────
+// Draws a progress bar at y=54, width proportional to pct (0–100)
+static void drawProgressBar(int pct) {
+  int barX = 4, barY = 54, barW = 120, barH = 6;
+  display.drawRoundRect(barX, barY, barW, barH, 3, SSD1306_WHITE);
+  int fill = (barW - 2) * pct / 100;
+  if (fill > 0) {
+    display.fillRoundRect(barX + 1, barY + 1, fill, barH - 2, 2, SSD1306_WHITE);
+  }
+}
+
+// ── updateDisplay() ──────────────────────────────────────────────────────────
+// Clean 4-line layout with top rule and consistent spacing.
+// Signature unchanged — drop-in replacement.
 void updateDisplay(const char* line1, const char* line2, const char* line3, const char* line4) {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  
-  display.setCursor(0, 0);
-  display.println(line1);
-  
+
+  // Top accent rule
+  drawRule(9);
+
+  // Line 1 — header / title area (above rule)
+  display.setCursor(2, 1);
+  display.print(line1);
+
+  // Lines 2-4 — body content below rule
   if (strlen(line2) > 0) {
-    display.setCursor(0, 16);
+    display.setCursor(2, 14);
     display.println(line2);
   }
-  
   if (strlen(line3) > 0) {
-    display.setCursor(0, 32);
+    display.setCursor(2, 28);
     display.println(line3);
   }
-  
   if (strlen(line4) > 0) {
-    display.setCursor(0, 48);
+    display.setCursor(2, 42);
     display.println(line4);
   }
-  
+
+  drawRoundBorder();
   display.display();
 }
 
+// ── displayNotification() ───────────────────────────────────────────────────
+// Premium notification card with:
+//   - Inverted "ONLINE" header bar
+//   - Large username (textSize 2)
+//   - Device and time rows with label prefixes
+//   - Flash animation (3 quick border blinks to grab attention)
+// Signature unchanged — drop-in replacement.
 void displayNotification(const char* user, const char* device, const char* time) {
+
+  // Flash animation: invert screen 3× before settling on the card
+  for (int flash = 0; flash < 3; flash++) {
+    display.clearDisplay();
+    display.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SSD1306_WHITE);
+    display.display();
+    delay(60);
+    display.clearDisplay();
+    display.display();
+    delay(60);
+  }
+
+  // ── Build the notification card ────────────────────────────────────────
   display.clearDisplay();
-  
-  // Title
+
+  // Inverted header bar (y=0..13): filled rectangle with "ONLINE" in black
+  display.fillRect(0, 0, SCREEN_WIDTH, 13, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
   display.setTextSize(1);
+  display.setCursor(3, 3);
+  display.print("* ONLINE *");
+
+  // Signal indicator in header bar (top-right)
+  drawSignalBars(109, 3, 3);   // 3 filled = strong
+
+  // Switch back to white text for body
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("ONLINE!");
-  
-  // User (larger text)
+
+  // Username — large text (textSize 2 = 12px tall glyphs)
   display.setTextSize(2);
-  display.setCursor(0, 16);
-  display.println(user);
-  
-  // Device
+  display.setCursor(2, 17);
+  // Truncate if longer than ~8 chars to avoid overflow at textSize 2
+  String userName = String(user);
+  if (userName.length() > 8) {
+    userName = userName.substring(0, 7) + ".";
+  }
+  display.print(userName);
+
+  // Divider below username
+  drawRule(35);
+
+  // Device row (textSize 1)
   display.setTextSize(1);
-  display.setCursor(0, 40);
-  display.print("Device: ");
-  display.println(device);
-  
-  // Time
-  display.setCursor(0, 52);
-  display.print("Time: ");
-  display.println(time);
-  
+  display.setCursor(2, 39);
+  display.print("Dev: ");
+  // Truncate device to fit remaining width (~15 chars after label)
+  String devStr = String(device);
+  if (devStr.length() > 14) {
+    devStr = devStr.substring(0, 13) + ".";
+  }
+  display.print(devStr);
+
+  // Time row
+  display.setCursor(2, 51);
+  display.print("At:  ");
+  String timeStr = String(time);
+  if (timeStr.length() > 14) {
+    timeStr = timeStr.substring(0, 13) + ".";
+  }
+  display.print(timeStr);
+
+  // Outer rounded border
+  drawRoundBorder();
+
   display.display();
 }
 
-void displayStatus(const char* status) {
+// ── displayLoginVisit() ─────────────────────────────────────────────────────
+// Premium login visit alert with:
+//   - Red inverted "🚨 LOGIN ALERT" header bar
+//   - Large "VISITOR" text
+//   - Device and time information
+//   - More urgent flash animation (5 quick blinks)
+void displayLoginVisit(const char* device, const char* time) {
+
+  // Flash animation: more urgent (5 blinks)
+  for (int flash = 0; flash < 5; flash++) {
+    display.clearDisplay();
+    display.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SSD1306_WHITE);
+    display.display();
+    delay(50);
+    display.clearDisplay();
+    display.display();
+    delay(50);
+  }
+
+  // ── Build the login alert card ─────────────────────────────────────────
   display.clearDisplay();
+
+  // Inverted header bar (y=0..13): filled rectangle with alert text
+  display.fillRect(0, 0, SCREEN_WIDTH, 13, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
   display.setTextSize(1);
+  display.setCursor(3, 3);
+  display.print("! LOGIN ALERT !");
+
+  // Warning indicator in header bar (top-right) - all bars filled
+  drawSignalBars(109, 3, 3);
+
+  // Switch back to white text for body
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 0);
-  display.println("ESP32 Notification");
-  display.println("Client");
-  display.println("");
+
+  // "VISITOR" text — large
   display.setTextSize(2);
-  display.println(status);
+  display.setCursor(2, 17);
+  display.print("VISITOR");
+
+  // Divider below title
+  drawRule(35);
+
+  // Device row (textSize 1)
+  display.setTextSize(1);
+  display.setCursor(2, 39);
+  display.print("Dev: ");
+  String devStr = String(device);
+  if (devStr.length() > 14) {
+    devStr = devStr.substring(0, 13) + ".";
+  }
+  display.print(devStr);
+
+  // Time row
+  display.setCursor(2, 51);
+  display.print("At:  ");
+  String timeStr = String(time);
+  if (timeStr.length() > 14) {
+    timeStr = timeStr.substring(0, 13) + ".";
+  }
+  display.print(timeStr);
+
+  // Outer rounded border
+  drawRoundBorder();
+
+  display.display();
+}
+
+// ── displayStatus() ─────────────────────────────────────────────────────────
+// Premium status screen with:
+//   - "ESP32" branding bar at top (inverted)
+//   - Centred status text (textSize 1 for short, textSize 1 for all)
+//   - Animated progress bar that sweeps across the bottom
+//   - Context-aware signal bars for WiFi states
+// Signature unchanged — drop-in replacement.
+void displayStatus(const char* status) {
+
+  // ── Animated progress bar sweep (non-blocking feel: 5 quick frames) ────
+  // Only animate for "connecting" type messages to avoid delays elsewhere
+  String s = String(status);
+  bool doAnimate = (s.indexOf("Connect") >= 0 || s.indexOf("connect") >= 0
+                    || s.indexOf("Waiting") >= 0 || s.indexOf("Init") >= 0);
+
+  if (doAnimate) {
+    for (int pct = 0; pct <= 100; pct += 25) {
+      display.clearDisplay();
+
+      // Inverted branding bar
+      display.fillRect(0, 0, SCREEN_WIDTH, 12, SSD1306_WHITE);
+      display.setTextColor(SSD1306_BLACK);
+      display.setTextSize(1);
+      display.setCursor(3, 2);
+      display.print("ESP32  NOTIFY");
+
+      // Status text (white, centred vertically in remaining space)
+      display.setTextColor(SSD1306_WHITE);
+      display.setTextSize(1);
+
+      // Centre horizontally: each char is ~6px wide at textSize 1
+      int textW = strlen(status) * 6;
+      int cx = (SCREEN_WIDTH - textW) / 2;
+      if (cx < 2) cx = 2;
+      display.setCursor(cx, 26);
+      display.print(status);
+
+      // Ellipsis dots cycling with pct
+      int dots = (pct / 25) % 4;
+      display.setCursor(cx + textW + 2, 26);
+      for (int d = 0; d < dots; d++) display.print(".");
+
+      // Progress bar
+      drawProgressBar(pct);
+
+      drawRoundBorder();
+      display.display();
+      delay(60);
+    }
+  }
+
+  // ── Final static frame ─────────────────────────────────────────────────
+  display.clearDisplay();
+
+  // Inverted branding bar
+  display.fillRect(0, 0, SCREEN_WIDTH, 12, SSD1306_WHITE);
+  display.setTextColor(SSD1306_BLACK);
+  display.setTextSize(1);
+  display.setCursor(3, 2);
+  display.print("ESP32  NOTIFY");
+
+  // Signal bars in header — context aware
+  int signalFill = 0;
+  if (s.indexOf("Connected") >= 0 || s.indexOf("Ready") >= 0) signalFill = 3;
+  else if (s.indexOf("WiFi") >= 0 && s.indexOf("Failed") < 0)  signalFill = 2;
+  else if (s.indexOf("Connecting") >= 0)                        signalFill = 1;
+  drawSignalBars(109, 2, signalFill);
+
+  // Status text
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(1);
+
+  int textW = strlen(status) * 6;
+  int cx = (SCREEN_WIDTH - textW) / 2;
+  if (cx < 2) cx = 2;
+  display.setCursor(cx, 26);
+  display.print(status);
+
+  // Solid progress bar at 100% for final frame
+  drawProgressBar(100);
+
+  drawRoundBorder();
   display.display();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// Buzzer Functions
+// Buzzer Functions (PWM-based for clean sound)
 // ══════════════════════════════════════════════════════════════════════════════
 void playBuzzer(int frequency, int duration) {
-  tone(BUZZER_PIN, frequency, duration);
-  delay(duration);
-  noTone(BUZZER_PIN);
+  if (frequency > 0) {
+    ledcAttach(BUZZER_PIN, frequency, BUZZER_RESOLUTION);
+    ledcWrite(BUZZER_PIN, 128);  // 50% duty cycle for clean tone
+    delay(duration);
+    ledcWrite(BUZZER_PIN, 0);  // Stop
+  } else {
+    delay(duration);
+  }
 }
 
 void playNotificationTone() {
-  // Pleasant notification melody
-  playBuzzer(1000, 100);
+  // Clean notification melody with proper frequencies
+  playBuzzer(523, 120);   // C5
+  delay(30);
+  playBuzzer(659, 120);   // E5
+  delay(30);
+  playBuzzer(784, 150);   // G5
   delay(50);
-  playBuzzer(1500, 100);
-  delay(50);
-  playBuzzer(2000, 150);
-  delay(100);
-  playBuzzer(1500, 200);
+  playBuzzer(659, 180);   // E5
+  ledcWrite(BUZZER_PIN, 0);  // Ensure silence at end
+}
+
+void playLoginTone() {
+  // More urgent alert tone for login visits (higher pitch, faster)
+  playBuzzer(880, 100);   // A5
+  delay(20);
+  playBuzzer(988, 100);   // B5
+  delay(20);
+  playBuzzer(1047, 120);  // C6
+  delay(30);
+  playBuzzer(988, 100);   // B5
+  delay(20);
+  playBuzzer(880, 150);   // A5
+  ledcWrite(BUZZER_PIN, 0);  // Ensure silence at end
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -425,4 +711,3 @@ void switchServer() {
   delay(1000);
   webSocket.beginSSL(current_host, current_port, ws_path);
 }
-

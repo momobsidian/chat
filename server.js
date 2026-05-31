@@ -266,6 +266,13 @@ const server = http.createServer((req, res) => {
         if (typeof sendFCM === 'function') {
           sendFCM('Login Page Visited', `Device: ${device} | Time: ${time}`);
         }
+        
+        // ESP32 push for login visit
+        pushToESP32({
+          type: "LOGIN_VISIT",
+          device,
+          time
+        });
       } catch (e) {
         log.error('Failed to parse login-visit', e.message);
       }
