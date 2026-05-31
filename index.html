@@ -2004,9 +2004,9 @@
     }
 
     .loader-logo {
-      width: 120px;
-      height: 120px;
-      animation: cinematicZoomOut 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      width: 180px;
+      height: 180px;
+      animation: cinematicZoomOut 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       opacity: 0;
     }
 
@@ -2018,11 +2018,8 @@
 
     @keyframes cinematicZoomOut {
       0% {
-        transform: scale(3);
+        transform: scale(1.15);
         opacity: 0;
-      }
-      40% {
-        opacity: 1;
       }
       100% {
         transform: scale(1);
