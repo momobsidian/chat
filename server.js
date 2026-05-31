@@ -204,15 +204,28 @@ async function sendFCM(title, body, topic = 'all_users') {
 // We will attach the WebSocket server to the main HTTP server on PORT 3000 below.
 
 const androidClients = new Set();
+const esp32Clients = new Set();
 
 
-// push helper
+// push helper for Android
 function pushToAndroid(data) {
   const payload = JSON.stringify(data);
 
   for (const ws of androidClients) {
     if (ws.readyState === 1) {
       ws.send(payload);
+    }
+  }
+}
+
+// push helper for ESP32
+function pushToESP32(data) {
+  const payload = JSON.stringify(data);
+  
+  for (const ws of esp32Clients) {
+    if (ws.readyState === 1) {
+      ws.send(payload);
+      log.success(`Sent to ESP32: ${data.type}`);
     }
   }
 }
@@ -281,14 +294,53 @@ const server = http.createServer((req, res) => {
 
 const wss = new WebSocket.Server({ server });
 
-wss.on('connection', (ws) => {
-  log.event('Android client connected via WebSocket');
-  androidClients.add(ws);
-
-  ws.on('close', () => {
-    log.event('Android client disconnected');
-    androidClients.delete(ws);
-  });
+wss.on('connection', (ws, req) => {
+  const url = req.url;
+  
+  // Check if it's an ESP32 client
+  if (url === '/esp32') {
+    log.event('ESP32 client connected via WebSocket');
+    esp32Clients.add(ws);
+    
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message);
+        if (data.type === 'ESP32_HELLO') {
+          log.success(`ESP32 identified: ${data.device || 'Unknown'}`);
+          ws.send(JSON.stringify({ type: 'WELCOME', message: 'Connected to notification server' }));
+        } else if (data.type === 'PONG') {
+          log.info('ESP32 PONG received');
+        }
+      } catch (e) {
+        log.error('ESP32 message parse error:', e.message);
+      }
+    });
+    
+    ws.on('close', () => {
+      log.event('ESP32 client disconnected');
+      esp32Clients.delete(ws);
+    });
+    
+    ws.on('error', (error) => {
+      log.error('ESP32 WebSocket error:', error.message);
+      esp32Clients.delete(ws);
+    });
+    
+  } else {
+    // Android client (default)
+    log.event('Android client connected via WebSocket');
+    androidClients.add(ws);
+    
+    ws.on('close', () => {
+      log.event('Android client disconnected');
+      androidClients.delete(ws);
+    });
+    
+    ws.on('error', (error) => {
+      log.error('Android WebSocket error:', error.message);
+      androidClients.delete(ws);
+    });
+  }
 });
 
 server.listen(PORT, () => {
@@ -343,8 +395,17 @@ function watchPresence() {
           // FCM notification to Android app
           sendFCM('User Online', `${device} is online | ${time}`);
 
-          // NEW: Android push
+          // Android push
           pushToAndroid({
+            type: "PRESENCE_UPDATE",
+            user,
+            state,
+            device,
+            time
+          });
+          
+          // ESP32 push
+          pushToESP32({
             type: "PRESENCE_UPDATE",
             user,
             state,
@@ -363,3 +424,12 @@ function watchPresence() {
 
   log.system('Watching Firebase presence...');
 }
+
+// ── Heartbeat for ESP32 clients (keep connection alive) ─────────────────────
+setInterval(() => {
+  for (const ws of esp32Clients) {
+    if (ws.readyState === 1) {
+      ws.send(JSON.stringify({ type: 'PING' }));
+    }
+  }
+}, 30000); // Every 30 seconds
