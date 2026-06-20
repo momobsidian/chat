@@ -6,8 +6,7 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Chat</title>
-  <!-- Preload logo for instant loading screen -->
-  <link rel="preload" href="logo.png" as="image">
+
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
     crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -2003,57 +2002,7 @@
       pointer-events: none;
     }
 
-    .loader-logo {
-      width: 260px;
-      height: 260px;
-      animation: cinematicZoomOut 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      opacity: 0;
-    }
 
-    .loader-logo img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-
-    @keyframes cinematicZoomOut {
-      0% {
-        transform: scale(1.15);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-    }
-
-    .loader-progress-container {
-      width: 200px;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      position: relative;
-    }
-
-    .loader-progress-bar {
-      height: 100%;
-      background: rgba(255, 255, 255, 0.6);
-      border-radius: 10px;
-      width: 0%;
-      animation: progressFill 2.5s ease-in-out forwards;
-    }
-
-    @keyframes progressFill {
-      0% {
-        width: 0%;
-      }
-      60% {
-        width: 75%;
-      }
-      100% {
-        width: 95%;
-      }
-    }
 
 
 
@@ -2090,8 +2039,7 @@
               class="fa-solid fa-delete-left"></i></span></div>
       </div>
     </div>
-    <!-- Preload logo in background -->
-    <img src="logo.png" style="display: none;" alt="preload">
+
   </div>
     </div>
   </div>
@@ -2401,12 +2349,7 @@
         earlyLoader.className = 'app-loader';
         earlyLoader.id = 'earlyLoader';
         earlyLoader.innerHTML = `
-          <div class="loader-logo">
-            <img src="logo.png" alt="Logo">
-          </div>
-          <div class="loader-progress-container">
-            <div class="loader-progress-bar"></div>
-          </div>
+          <div style="color: white; font-size: 2rem; font-weight: bold; letter-spacing: 2px;">moo</div>
         `;
         document.body.appendChild(earlyLoader);
 
@@ -4303,12 +4246,6 @@
         // ======= REMOVE LOADER — UI is fully themed & populated =======
         const appLoader = document.getElementById('earlyLoader');
         if (appLoader) {
-          // Update loader status to show completion
-          const loaderStatus = appLoader.querySelector('.loader-status span');
-          if (loaderStatus) {
-            loaderStatus.textContent = 'Ready';
-          }
-          
           // Wait for next frame to ensure all DOM updates are complete
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
